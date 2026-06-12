@@ -157,11 +157,27 @@
               <div class="review-body">
                 <div class="review-header">
                   <span class="reviewer">{{ r.reviewer?.username }}</span>
-                  <el-rate v-model="r.rating" disabled size="small" />
+                  <el-rate :model-value="r.rating" disabled size="small" />
                   <span class="badge badge-primary">{{ r.context }}</span>
                   <span class="time">{{ new Date(r.createdAt).toLocaleDateString() }}</span>
                 </div>
                 <p>{{ r.content }}</p>
+                <div v-if="r.rating <= 3" class="review-actions">
+                  <el-button 
+                    size="small" 
+                    type="warning" 
+                    :disabled="hasAppealMap[r.id]"
+                    @click="openAppealDialog(r)"
+                  >
+                    <el-icon><Warning /></el-icon>
+                    {{ hasAppealMap[r.id] ? '已申诉' : '申诉该评价' }}
+                  </el-button>
+                  <span v-if="hasAppealMap[r.id]" class="appeal-status">
+                    <span :class="'badge ' + getAppealStatusClass(hasAppealMap[r.id].status)">
+                      {{ getAppealStatusText(hasAppealMap[r.id].status) }}
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -170,18 +186,101 @@
             <p>暂无评价</p>
           </div>
         </el-tab-pane>
+
+        <el-tab-pane label="我的申诉" name="appeals">
+          <div class="appeal-tabs mb-20">
+            <el-radio-group v-model="appealFilter" size="large">
+              <el-radio-button value="all">全部</el-radio-button>
+              <el-radio-button value="pending">待处理</el-radio-button>
+              <el-radio-button value="approved">已通过</el-radio-button>
+              <el-radio-button value="rejected">已驳回</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div v-if="filteredAppeals.length" class="appeal-list">
+            <div class="appeal-item card" v-for="a in filteredAppeals" :key="a.id">
+              <div class="appeal-header">
+                <span :class="'badge ' + getAppealStatusClass(a.status)">
+                  {{ getAppealStatusText(a.status) }}
+                </span>
+                <span class="appeal-time">{{ new Date(a.createdAt).toLocaleString() }}</span>
+              </div>
+              <div class="appeal-review">
+                <div class="appeal-review-title">原评价：</div>
+                <div class="appeal-review-content">
+                  <el-rate :model-value="a.review?.rating" disabled size="small" />
+                  <span>{{ a.review?.content }}</span>
+                </div>
+              </div>
+              <div class="appeal-reason">
+                <div class="appeal-reason-title">申诉理由：</div>
+                <p>{{ a.reason }}</p>
+              </div>
+              <div v-if="a.imageUrl" class="appeal-image">
+                <div class="appeal-image-title">证据图片：</div>
+                <a :href="a.imageUrl" target="_blank">{{ a.imageUrl }}</a>
+              </div>
+              <div v-if="a.reply" class="appeal-reply">
+                <div class="appeal-reply-title">处理结果：</div>
+                <p>{{ a.reply }}</p>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-state">
+            <el-icon><Document /></el-icon>
+            <p>暂无申诉记录</p>
+          </div>
+        </el-tab-pane>
       </el-tabs>
+
+      <el-dialog
+        v-model="appealDialogVisible"
+        title="提交评价申诉"
+        width="500px"
+        :close-on-click-modal="false"
+      >
+        <el-form :model="appealForm" label-width="100px">
+          <el-form-item label="原评价">
+            <div class="appeal-target">
+              <el-rate :model-value="currentAppealReview?.rating" disabled size="small" />
+              <span>{{ currentAppealReview?.content }}</span>
+            </div>
+          </el-form-item>
+          <el-form-item label="申诉原因" required>
+            <el-input
+              v-model="appealForm.reason"
+              type="textarea"
+              :rows="4"
+              placeholder="请详细说明申诉理由..."
+              maxlength="500"
+              show-word-limit
+            />
+          </el-form-item>
+          <el-form-item label="图片链接">
+            <el-input
+              v-model="appealForm.imageUrl"
+              placeholder="请输入证据图片链接（选填）"
+            />
+            <div class="form-tip">请上传图片至图床后粘贴链接，支持jpg、png等格式</div>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="appealDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submittingAppeal" @click="submitAppeal">
+            提交申诉
+          </el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { checkinApi, instrumentApi, reviewApi } from '../api'
+import { checkinApi, instrumentApi, reviewApi, appealApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Check, Plus, Goods, ChatLineSquare } from '@element-plus/icons-vue'
+import { Check, Plus, Goods, ChatLineSquare, Warning, Document } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -191,6 +290,22 @@ const saving = ref(false)
 const stats = ref(null)
 const myInstruments = ref([])
 const myReviews = ref([])
+const myAppeals = ref([])
+const appealFilter = ref('all')
+const appealDialogVisible = ref(false)
+const submittingAppeal = ref(false)
+const currentAppealReview = ref(null)
+const hasAppealMap = ref({})
+
+const appealForm = reactive({
+  reason: '',
+  imageUrl: ''
+})
+
+const filteredAppeals = computed(() => {
+  if (appealFilter.value === 'all') return myAppeals.value
+  return myAppeals.value.filter(a => a.status === appealFilter.value)
+})
 
 const form = reactive({
   ...(userStore.currentUser || {}),
@@ -201,6 +316,70 @@ const form = reactive({
 
 const allInstruments = ['古典吉他', '民谣吉他', '电吉他', '尤克里里', '钢琴', '电子琴', '小提琴', '中提琴', '大提琴', '架子鼓', '卡洪鼓', '竹笛', '长笛', '洞箫', '陶埙', '口琴', '萨克斯', '小号', '古筝', '二胡', '琵琶', '阮', '扬琴']
 const commonPieces = ['爱的罗曼史', '阿尔罕布拉宫的回忆', '肖邦夜曲', '梦中的婚礼', '小星星变奏曲', '铃木小提琴教程', 'Take Five', '西班牙斗牛曲', '姑苏行', '平湖秋月', '卡农', '天空之城', '千与千寻', '菊次郎的夏天']
+
+const getAppealStatusText = (status) => {
+  const map = {
+    pending: '待处理',
+    approved: '已通过',
+    rejected: '已驳回'
+  }
+  return map[status] || status
+}
+
+const getAppealStatusClass = (status) => {
+  const map = {
+    pending: 'badge-warning',
+    approved: 'badge-success',
+    rejected: 'badge-danger'
+  }
+  return map[status] || ''
+}
+
+const loadAppeals = async () => {
+  try {
+    myAppeals.value = await appealApi.list({ appellantId: userStore.userId })
+    hasAppealMap.value = {}
+    myAppeals.value.forEach(a => {
+      if (a.status !== 'rejected') {
+        hasAppealMap.value[a.reviewId] = a
+      }
+    })
+  } catch (e) {}
+}
+
+const openAppealDialog = (review) => {
+  currentAppealReview.value = review
+  appealForm.reason = ''
+  appealForm.imageUrl = ''
+  appealDialogVisible.value = true
+}
+
+const submitAppeal = async () => {
+  if (!appealForm.reason.trim()) {
+    ElMessage.warning('请填写申诉原因')
+    return
+  }
+  submittingAppeal.value = true
+  try {
+    const result = await appealApi.create({
+      reviewId: currentAppealReview.value.id,
+      appellantId: userStore.userId,
+      reason: appealForm.reason.trim(),
+      imageUrl: appealForm.imageUrl.trim()
+    })
+    if (result.success) {
+      ElMessage.success('申诉提交成功，请等待审核')
+      appealDialogVisible.value = false
+      loadAppeals()
+    } else {
+      ElMessage.error(result.error || '提交失败')
+    }
+  } catch (e) {
+    ElMessage.error('提交失败')
+  } finally {
+    submittingAppeal.value = false
+  }
+}
 
 onMounted(async () => {
   if (userStore.currentUser) {
@@ -215,6 +394,7 @@ onMounted(async () => {
   try {
     myReviews.value = await reviewApi.list({ revieweeId: userStore.userId })
   } catch (e) {}
+  loadAppeals()
 })
 
 const randomAvatar = () => {
@@ -421,6 +601,113 @@ const deleteInstrument = async (inst) => {
   margin-left: auto;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.review-actions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appeal-status {
+  font-size: 12px;
+}
+
+.badge-danger {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.appeal-tabs {
+  display: flex;
+  justify-content: center;
+}
+
+.appeal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appeal-item {
+  padding: 20px;
+}
+
+.appeal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.appeal-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.appeal-review,
+.appeal-reason,
+.appeal-image,
+.appeal-reply {
+  margin-bottom: 12px;
+}
+
+.appeal-review-title,
+.appeal-reason-title,
+.appeal-image-title,
+.appeal-reply-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.appeal-review-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.appeal-reason p,
+.appeal-reply p {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.appeal-image a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.appeal-reply {
+  background: var(--bg-light);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+.appeal-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  padding: 10px;
+  background: var(--bg-light);
+  border-radius: 6px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
 }
 
 @media (max-width: 900px) {

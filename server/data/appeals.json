@@ -1,0 +1,41 @@
+[
+  {
+    "id": "a001",
+    "reviewId": "r005",
+    "appellantId": "u002",
+    "reviewerId": "u004",
+    "reason": "该评价与事实不符，我们只是临时有事取消了预约，对方恶意差评。有聊天记录为证。",
+    "imageUrl": "https://example.com/chat-proof.png",
+    "status": "approved",
+    "reply": "经核实，申诉有效，该评价确实存在恶意差评情况，已删除该评价。",
+    "handlerId": "u002",
+    "handledAt": "2026-06-12T19:31:43.945Z",
+    "createdAt": "2026-06-10T09:30:00.000Z"
+  },
+  {
+    "id": "a002",
+    "reviewId": "r006",
+    "appellantId": "u003",
+    "reviewerId": "u001",
+    "reason": "评价内容不属实，我按时归还了乐器，对方说我损坏了但没有证据。",
+    "imageUrl": "https://example.com/instrument-condition.jpg",
+    "status": "approved",
+    "reply": "经核实，申诉有效，已删除该差评。",
+    "handlerId": "u001",
+    "handledAt": "2026-06-11T11:00:00.000Z",
+    "createdAt": "2026-06-09T15:20:00.000Z"
+  },
+  {
+    "id": "a003",
+    "reviewId": "r007",
+    "appellantId": "u005",
+    "reviewerId": "u002",
+    "reason": "对方只是觉得我迟到了10分钟，但我已经提前说明原因了。",
+    "imageUrl": "",
+    "status": "rejected",
+    "reply": "申诉不成立，迟到确实影响了对方的练琴安排，请以后注意时间。",
+    "handlerId": "u001",
+    "handledAt": "2026-06-08T14:30:00.000Z",
+    "createdAt": "2026-06-07T10:00:00.000Z"
+  }
+]

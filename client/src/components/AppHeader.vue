@@ -53,6 +53,9 @@
                 <el-dropdown-item command="messages">
                   <el-icon><Message /></el-icon>消息中心
                 </el-dropdown-item>
+                <el-dropdown-item command="admin">
+                  <el-icon><Setting /></el-icon>后台管理
+                </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>退出登录
                 </el-dropdown-item>
@@ -76,6 +79,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { borrowApi, invitationApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Setting } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -98,6 +102,9 @@ const handleCommand = (cmd) => {
       break
     case 'messages':
       router.push('/messages')
+      break
+    case 'admin':
+      router.push('/admin')
       break
     case 'logout':
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {

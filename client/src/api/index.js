@@ -68,4 +68,11 @@ export const recommendApi = {
   pieces: (userId) => api.get(`/recommendations/pieces/${userId}`)
 }
 
+export const appealApi = {
+  list: (params) => api.get('/appeals', { params }),
+  create: (data) => api.post('/appeals', data),
+  handle: (id, data) => api.put(`/appeals/${id}/handle`, data),
+  check: (reviewId) => api.get(`/appeals/check/${reviewId}`)
+}
+
 export default api

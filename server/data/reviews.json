@@ -42,5 +42,38 @@
     "content": "配合非常默契，钢琴水平一流，乐队感十足！",
     "context": "陪练邀约",
     "createdAt": "2026-04-15T20:00:00.000Z"
+  },
+  {
+    "id": "r006",
+    "reviewerId": "u001",
+    "revieweeId": "u003",
+    "targetType": "borrow",
+    "targetId": "b002",
+    "rating": 2,
+    "content": "还回来的时候小提琴有划痕，也不说明情况，太不负责了",
+    "context": "乐器借用",
+    "createdAt": "2026-06-08T12:00:00.000Z"
+  },
+  {
+    "id": "r007",
+    "reviewerId": "u002",
+    "revieweeId": "u005",
+    "targetType": "user",
+    "targetId": "u005",
+    "rating": 2,
+    "content": "迟到太久，练琴时间都被耽误了",
+    "context": "陪练邀约",
+    "createdAt": "2026-06-06T18:00:00.000Z"
+  },
+  {
+    "id": "r008",
+    "reviewerId": "u003",
+    "revieweeId": "u001",
+    "targetType": "user",
+    "targetId": "u001",
+    "rating": 3,
+    "content": "一般般吧，没什么特别的",
+    "context": "陪练邀约",
+    "createdAt": "2026-06-12T10:00:00.000Z"
   }
 ]
