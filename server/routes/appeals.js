@@ -55,10 +55,17 @@ router.post('/', (req, res) => {
     });
   }
 
-  if (review.rating >= 3) {
+  if (review.rating > 3) {
     return res.status(400).json({
       success: false,
       error: '只能对3星及以下的评价提起申诉'
+    });
+  }
+
+  if (review.revieweeId !== appellantId) {
+    return res.status(400).json({
+      success: false,
+      error: '只能申诉针对自己的评价'
     });
   }
 

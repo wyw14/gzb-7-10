@@ -162,7 +162,7 @@
                   <span class="time">{{ new Date(r.createdAt).toLocaleDateString() }}</span>
                 </div>
                 <p>{{ r.content }}</p>
-                <div v-if="r.rating <= 3" class="review-actions">
+                <div v-if="r.rating <= 3 && r.revieweeId === userStore.userId" class="review-actions">
                   <el-button 
                     size="small" 
                     type="warning" 
@@ -348,6 +348,14 @@ const loadAppeals = async () => {
 }
 
 const openAppealDialog = (review) => {
+  if (review.rating > 3) {
+    ElMessage.warning('只能对3星及以下的评价提起申诉')
+    return
+  }
+  if (review.revieweeId !== userStore.userId) {
+    ElMessage.warning('只能申诉针对自己的评价')
+    return
+  }
   currentAppealReview.value = review
   appealForm.reason = ''
   appealForm.imageUrl = ''
@@ -355,6 +363,18 @@ const openAppealDialog = (review) => {
 }
 
 const submitAppeal = async () => {
+  if (!currentAppealReview.value) {
+    ElMessage.warning('请选择要申诉的评价')
+    return
+  }
+  if (currentAppealReview.value.rating > 3) {
+    ElMessage.warning('只能对3星及以下的评价提起申诉')
+    return
+  }
+  if (currentAppealReview.value.revieweeId !== userStore.userId) {
+    ElMessage.warning('只能申诉针对自己的评价')
+    return
+  }
   if (!appealForm.reason.trim()) {
     ElMessage.warning('请填写申诉原因')
     return

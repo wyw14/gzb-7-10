@@ -37,5 +37,18 @@
     "handlerId": "u001",
     "handledAt": "2026-06-08T14:30:00.000Z",
     "createdAt": "2026-06-07T10:00:00.000Z"
+  },
+  {
+    "id": "adb3ac3b2",
+    "reviewId": "r008",
+    "appellantId": "u001",
+    "reviewerId": "u003",
+    "reason": "3????????",
+    "imageUrl": "",
+    "status": "pending",
+    "reply": "",
+    "handlerId": null,
+    "handledAt": null,
+    "createdAt": "2026-06-13T10:34:53.033Z"
   }
 ]
